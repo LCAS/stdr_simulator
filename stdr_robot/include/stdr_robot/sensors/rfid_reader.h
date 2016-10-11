@@ -28,6 +28,12 @@
 #include <stdr_msgs/RfidSensorMeasurementMsg.h>
 #include <stdr_msgs/RfidTagVector.h>
 
+#include <boost/math/distributions/normal.hpp>
+#include <boost/random/normal_distribution.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/variate_generator.hpp>
+ using boost::math::normal; // typedef provides default type is double.
+ 
 /**
 @namespace stdr_robot
 @brief The main namespace for STDR Robot
@@ -74,6 +80,8 @@ namespace stdr_robot {
       **/
       void receiveRfids(const stdr_msgs::RfidTagVector& msg);
 
+      float receivedPower(const stdr_msgs::RfidTag rfid_tag );
+
     private:
 
       //!< Sonar rfid reader description
@@ -84,6 +92,12 @@ namespace stdr_robot {
       
       //!< The currently existent RFID tags
       stdr_msgs::RfidTagVector rfid_tags_;
+      
+      // Use the boost random number generator
+      boost::mt19937 rng;
+      // Make a variate_generator OBJECT.
+      boost::variate_generator<boost::mt19937&,boost::normal_distribution<> > var_nor;
+
   };
 
 }

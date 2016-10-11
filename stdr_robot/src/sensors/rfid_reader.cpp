@@ -36,7 +36,7 @@ namespace stdr_robot {
       const std::string& name,
       ros::NodeHandle& n)
   : 
-    Sensor(map, name, n, msg.pose, msg.frame_id, msg.frequency)
+    Sensor(map, name, n, msg.pose, msg.frame_id, msg.frequency),rng(), var_nor(rng, boost::normal_distribution<>(0.0, 1.0))
   {
     _description = msg;
 
@@ -48,6 +48,8 @@ namespace stdr_robot {
       1, 
       &RfidReader::receiveRfids,
       this);
+      
+      
   }
   
   /**
@@ -101,15 +103,58 @@ namespace stdr_robot {
         continue;
       }
       
+      float rPow=receivedPower(rfid_tags_.rfid_tags[i]);
+            
       measuredTagsMsg.rfid_tags_ids.push_back(rfid_tags_.rfid_tags[i].tag_id);
       measuredTagsMsg.rfid_tags_msgs.push_back(rfid_tags_.rfid_tags[i].message);
-      measuredTagsMsg.rfid_tags_dbs.push_back(1.0); //!< Needs to change into a realistic measurement
+      measuredTagsMsg.rfid_tags_dbs.push_back(rPow); 
     }
     
     measuredTagsMsg.header.stamp = ros::Time::now();
     measuredTagsMsg.header.frame_id = _namespace + "_" + _description.frame_id;
     _publisher.publish( measuredTagsMsg );
   }
+  
+/////////////////////////////////////////////////////////////////
+  float RfidReader::receivedPower(const stdr_msgs::RfidTag rfid_tag ){
+    float receivedPower=0.0;
+    float av_power=0.0;
+    float std_power=1.0;
+    
+    //constants
+    float av_max=-25.0;
+    float max_loss_dist=40.0;
+    float max_loss_ang=10.0;
+
+    
+    // reader data
+    float max_range = _description.maxRange;
+    float sensor_th = tf::getYaw(_sensorTransform.getRotation());
+    float min_angle = sensor_th - _description.angleSpan / 2.0;
+    float max_angle = sensor_th + _description.angleSpan / 2.0;    
+    float sensor_x = _sensorTransform.getOrigin().x();
+    float sensor_y = _sensorTransform.getOrigin().y();
+    
+    // relative positions
+    float dist = sqrt(pow(sensor_x - rfid_tag.pose.x, 2) +
+                      pow(sensor_y - rfid_tag.pose.y, 2) );
+      
+    float ang = atan2(rfid_tag.pose.y - sensor_y,
+                      rfid_tag.pose.x - sensor_x);
+    // We determine two parameters average power and std and use db ~ N(av,std)
+    
+    // av power is f(distance,angle)     
+    av_power = av_max - max_loss_dist*(dist/max_range)-max_loss_ang*(ang/(max_angle-min_angle));
+        
+    // std is fixed to 1 by now.    
+    std_power=1.0;    
+         
+    receivedPower=av_power+(std_power*var_nor());
+    
+    
+    return receivedPower;
+  }
+/////////////////////////////////////////////////////////////////
   
   /**
   @brief Receives the existent rfid tags
