@@ -10,40 +10,47 @@ from sensor_msgs.msg import LaserScan
 import sys
 
 
-rospy.init_node('molinillo')
-
-
-
-
 # Node example class.
 class formatParserRfid():
 
     def rfid_callback(self,msg):
         outMsg=''
 
-        lalalal=RfidSensorMeasurementMsg()
-        lalalal.
+
+
+        timestamp=int(msg.header.stamp.to_nsec()/1000000.0)
 
         separator=':'
-             #   0:300833B2DDD9014000000010:-63:140:866900:342:3771850356
-        fields=['0', msg.rfid_tags_ids, str(msg.rfid_tags_dbs),0,0]
+
+        for i in xrange(0,len(msg.rfid_tags_dbs)):
+            #   0:300833B2DDD9014000000010:-63:140:866900:342:3771850356
+            tagId=msg.rfid_tags_ids[i].zfill(24)
+            dbInt=str(int(msg.rfid_tags_dbs[i]))
+            phaseDegInt='0'
+            freqKHz='866900'
+            HighT=timestamp>>32
+            LowT=timestamp - (HighT<<32)
+            HighT=str(HighT)
+            LowT=str(LowT+i)
+
+            fields=['0', tagId , dbInt,phaseDegInt,freqKHz,HighT,LowT]
+            ans=separator.join(fields)
+            outMsg=String()
+            outMsg.data=ans
+
+            self.rfid_pub.publish(outMsg)
 
 
-        return outMsg
 
+    def odom_callback(self,msg):
+        outMsg=msg
 
+        self.odom_pub.publish(outMsg)
 
-    def rfid_callback(self,msg):
-        outMsg=0
+    def laser_callback(self,msg):
+        outMsg=msg
 
-
-        return outMsg
-
-    def rfid_callback(self,msg):
-        outMsg=0
-
-
-        return outMsg
+        self.laser_pub.publish(outMsg)
 
     # constructor.
     def __init__(self):
@@ -74,6 +81,7 @@ class formatParserRfid():
         # subscriber
         self.laser_sub = rospy.Subscriber(self.laser_orig_topic, LaserScan, self.laser_callback)
 
+        rospy.spin()
 
 
 # Main function.

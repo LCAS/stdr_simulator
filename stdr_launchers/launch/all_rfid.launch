@@ -8,8 +8,10 @@
 	
 	<include file="$(find stdr_gui)/launch/stdr_gui.launch"/>
 	
-	<node pkg="stdr_robot" type="robot_handler" name="$(anon robot_spawn)" args="add $(find stdr_resources)/resources/robots/square_robot_rfid_reader.xml 11 5 3.1416" />
+	<node pkg="stdr_robot" type="robot_handler" name="$(anon robot_spawn)" args="add $(find stdr_resources)/resources/robots/square_robot_rfid_reader.xml 11 5 3.1416" />    
 
     <node pkg="stdr_server" type="loadTag.py" name="loadTagNode" args="00000001 9.7 5 0" />
+    
+    <node pkg="stdr_server" type="formatParser.py" name="parserNode"/>
     
 </launch>
